@@ -12,6 +12,6 @@ class TopLevelCommand(object):
 
     Commands:
       init              Generate upm.yml interactively.
-      install           get and install dependency base on
+      install           get, install and start dependency. add new dependencies.
 
     """
