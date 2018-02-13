@@ -7,8 +7,8 @@ from setuptools import setup, find_packages
 ###################################################################
 
 NAME = 'upmcli'
-PACKAGES = find_packages(where='src')
-META_PATH = os.path.join('src', 'upmcli', '__init__.py')
+PACKAGES = find_packages(where='upm')
+META_PATH = os.path.join('upm', '__init__.py')
 KEYWORDS = ['packaging', 'package manager', 'container', 'docker', 'cli']
 CLASSIFIERS = [
     'Development Status :: 2 - Pre-Alpha',
@@ -60,7 +60,7 @@ if __name__ == '__main__':
         name=NAME,
         entry_points={
             'console_scripts': [
-                'upm = upm.cli:main',
+                'upm = cli.main:main',
                 'upx = upx.cli:main'
             ],
         },
@@ -75,7 +75,7 @@ if __name__ == '__main__':
         keywords=KEYWORDS,
         long_description=read('README.md'),
         packages=PACKAGES,
-        package_dir={'': 'src'},
+        package_dir={'': 'upm'},
         zip_safe=False,
         classifiers=CLASSIFIERS,
         install_requires=INSTALL_REQUIRES,
