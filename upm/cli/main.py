@@ -1,8 +1,11 @@
 import click
 import logging
 import sys
+from os import getcwd
 
 # from .package_specification import from_prompt, install_package, publish_package
+from cli import commands
+
 log = logging.getLogger(__name__)
 console_handler = logging.StreamHandler(sys.stderr)
 
@@ -10,15 +13,17 @@ console_handler = logging.StreamHandler(sys.stderr)
 
 
 @click.group()
-@click.option('--debug', default=False)
+@click.option('--debug', default=False, type=bool)
 def main(debug):
-    if debug:
-        logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.DEBUG)
+    # if debug:
+    #     logging.basicConfig(level=logging.DEBUG)
 
 
-@main.command()
+@main.command(help="create new package")
 def init():
-    pass
+    path = getcwd()
+    commands.initialize_package(path)
 
 
 @main.command()
