@@ -1,6 +1,6 @@
 import click
-from package.errors import PackageSpecificationAlreadyExist
-from package.specification import package_exists, PackageSpecification, dump_yaml
+from package.errors import PackageSpecificationAlreadyExist, PackageSpecificationNotFound
+from package.specification import package_exists, PackageSpecification, dump_yaml, PackageSpecificationFile
 
 
 def initialize_package(working_dir):
@@ -48,3 +48,14 @@ def initialize_package(working_dir):
             return package
 
     from_prompt(working_dir)
+
+
+def install_package(working_dir):
+    if not package_exists(working_dir):
+        raise PackageSpecificationNotFound(['upm.yml'])
+    else:
+        package_specification = PackageSpecificationFile.from_file('upm.yml')
+        print(package_specification.specification)
+
+
+

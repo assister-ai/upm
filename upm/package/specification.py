@@ -10,14 +10,21 @@ from common.const import SPEC_FILE_NAME
 log = logging.getLogger(__name__)
 
 
-class PackageSpecificationFile(namedtuple('PackageSpecificationFile', 'file_name config')):
+class PackageSpecificationFile(namedtuple('PackageSpecificationFile', 'file_name specification')):
     @classmethod
     def from_file(cls, filename):
         return cls(filename, load_yaml(filename))
 
 
-class PackageSpecification(namedtuple('_PackageSpecification',
-                                      'name author version description executables base')):
+class PackageSpecification(
+    namedtuple('_PackageSpecification',
+               'name author version description service executables base overrides environments dependencies')):
+    @classmethod
+    def from_dict(cls, pkg_spec_dict):
+        pass
+
+
+def pkg_factory(pkg_spec_dict):
     pass
 
 

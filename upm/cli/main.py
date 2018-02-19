@@ -3,8 +3,8 @@ import logging
 import sys
 from os import getcwd
 
-# from .package_specification import from_prompt, install_package, publish_package
 from cli import commands
+
 
 log = logging.getLogger(__name__)
 console_handler = logging.StreamHandler(sys.stderr)
@@ -27,9 +27,10 @@ def init():
 
 
 @main.command()
-@click.argument('path')
-def install(path):
-    pass
+# @click.argument('path')
+def install():
+    path = getcwd()
+    commands.install_package(path)
 
 
 @main.command()
