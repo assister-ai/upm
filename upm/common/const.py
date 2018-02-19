@@ -10,3 +10,7 @@ INITIALIZE_PROMPT_MSG = {
     'version': 'Please enter project version',
     'base': 'Please enter Dockerfile path'
 }
+
+WORKING_DIR = '/src'
+USER = 'root'
+MODULE_PATH = './universal_module/'
