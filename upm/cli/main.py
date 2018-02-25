@@ -2,6 +2,7 @@ import click
 import logging
 import sys
 from os import getcwd
+from os.path import abspath
 
 from cli import commands
 
@@ -27,10 +28,12 @@ def init():
 
 
 @main.command()
-# @click.argument('path')
-def install():
+@click.argument('folder', nargs=1, type=click.Path(exists=True), required=False)
+def install(folder):
+    print(folder)
     path = getcwd()
-    commands.install_package(path)
+    abs_path = abspath(folder)
+    commands.install_package(path, abs_path)
 
 
 @main.command()

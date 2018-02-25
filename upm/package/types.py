@@ -1,17 +1,17 @@
 from collections import namedtuple
 
-from upm.common.const import WORKING_DIR, USER, MODULE_PATH
-from upm.package.errors import PackageSpecificationSyntax
+from common.const import WORKING_DIR, USER, MODULE_PATH
+from package.errors import PackageSpecificationSyntax
 
 
 class Override(namedtuple('Override', 'pkg_name, service')):
     pass
 
 
-class Dependency(namedtuple('Dependency', 'pkg_name version')):
+class Dependency(namedtuple('Dependency', 'name location')):
     @classmethod
     def from_dict(cls, env_dict):
-        return cls(env_dict['pkg_name'], env_dict['version'])
+        return cls(list(env_dict.keys())[0], list(env_dict.values())[0])
 
 
 class Base(namedtuple('Base', 'image build work_dir user')):
@@ -50,7 +50,8 @@ def any_of_build_image(base_dict):
 class Executable(namedtuple('Executable', 'alias command')):
     @classmethod
     def from_dict(cls, executable_map):
-        return cls(executable_map['alias'], Command.from_dict(executable_map['command']))
+        print(executable_map)
+        return cls(list(executable_map.keys())[0], list(executable_map.values())[0])
 
 
 class Environment(namedtuple('Environment', 'variable value')):
@@ -59,38 +60,36 @@ class Environment(namedtuple('Environment', 'variable value')):
         return cls(env_dict['variable'], env_dict['value'])
 
 
-class Service(namedtuple('Service', 'command ports volumes')):
+class Service(namedtuple('Service', 'command ports')):
     @classmethod
     def from_dict(cls, service_dict):
         if 'command' not in service_dict:
             raise PackageSpecificationSyntax('command')
-        command = Command.from_dict(service_dict['command'])
+        command = service_dict['command']
         ports = None
-        volumes = None
         if 'ports' in service_dict:
             ports = [Port.from_dict(port) for port in service_dict['ports']]
-        if 'volumes' in service_dict:
-            volumes = [Volume.from_dict(volume) for volume in service_dict['volumes']]
-        return cls(command, ports, volumes)
+        return cls(command, ports)
 
 
 class Image(namedtuple('Image', 'user name tag registry')):
     pass
 
 
-class Command(namedtuple('Command', 'path executable args')):
-    @classmethod
-    def from_dict(cls, command_dict):
-        path = None
-        args = None
-        if 'executable' not in command_dict:
-            raise PackageSpecificationSyntax('command executable')
-        executable = command_dict['executable']
-        if 'args' in command_dict:
-            args = command_dict['args']
-        if 'path' in command_dict:
-            args = command_dict['args']
-        return cls(path, executable, args)
+# class Command(namedtuple('Command', 'executable')):
+#    pass
+# @classmethod
+# def from_dict(cls, command_dict):
+#     path = None
+#     args = None
+#     if 'executable' not in command_dict:
+#         raise PackageSpecificationSyntax('command executable')
+#     executable = command_dict['executable']
+#     if 'args' in command_dict:
+#         args = command_dict['args']
+#     if 'path' in command_dict:
+#         args = command_dict['args']
+#     return cls(path, executable, args)
 
 
 class Volume(namedtuple('Volume', 'src_path dest_path mode')):

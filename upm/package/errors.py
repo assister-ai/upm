@@ -27,6 +27,6 @@ class PackageSpecificationNotFound(PackageSpecificationError):
 class PackageSpecificationSyntax(PackageSpecificationError):
     def __init__(self, field):
         self.field = field
-        super(PackageSpecificationAlreadyExist, self).__init__(
+        super(PackageSpecificationError, self).__init__(
             "Package syntax error %s".format(field)
         )

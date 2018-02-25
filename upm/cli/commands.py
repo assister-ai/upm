@@ -1,6 +1,11 @@
+import logging
+
 import click
+
 from package.errors import PackageSpecificationAlreadyExist, PackageSpecificationNotFound
-from package.specification import package_exists, PackageSpecification, dump_yaml, PackageSpecificationFile
+from package.specification import package_exists, PackageSpecification, dump_upm, load_yaml
+
+log = logging.getLogger(__name__)
 
 
 def initialize_package(working_dir):
@@ -42,20 +47,24 @@ def initialize_package(working_dir):
             raise PackageSpecificationAlreadyExist('upm.yml')
         else:
             name, author, description, version, base, executables = get_user_input()
-            package = PackageSpecification(name, author, version, description, executables, base)
-            dump_yaml(dict(package._asdict()), package_dir)
+            package = PackageSpecification.from_cli(name, author, version, description, executables, base)
+            dump_upm(package, package_dir)
             print("project initialized")
             return package
 
     from_prompt(working_dir)
 
 
-def install_package(working_dir):
+def install_package(working_dir, pkg_location=None):
     if not package_exists(working_dir):
         raise PackageSpecificationNotFound(['upm.yml'])
-    else:
-        package_specification = PackageSpecificationFile.from_file('upm.yml')
-        print(package_specification.specification)
+
+    package_specification = load_yaml('upm.yml')
+    if pkg_location:
+        package_specification.add_dependency_folder(pkg_location)
+        dump_upm(package_specification, working_dir)
+    log.debug(package_specification)
+    package_specification.composer(working_dir)
 
 
 
