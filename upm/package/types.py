@@ -1,6 +1,7 @@
 from collections import namedtuple
 
-from common.const import WORKING_DIR, USER, MODULE_PATH
+from common.utils import remove_none_field
+from common.const import WORKING_DIR, USER, MODULE_FOLDER
 from package.errors import PackageSpecificationSyntax
 
 
@@ -12,6 +13,10 @@ class Dependency(namedtuple('Dependency', 'name location')):
     @classmethod
     def from_dict(cls, env_dict):
         return cls(list(env_dict.keys())[0], list(env_dict.values())[0])
+
+    def to_dict(self):
+        dict_temp = dict(self._asdict())
+        return {dict_temp['name']: dict_temp['location']}
 
 
 class Base(namedtuple('Base', 'image build work_dir user')):
@@ -31,6 +36,9 @@ class Base(namedtuple('Base', 'image build work_dir user')):
         if 'user' in base_dict:
             user = base_dict['user']
         return cls(image, build, work_dir, user)
+
+    def to_dict(self):
+        return remove_none_field(dict(self._asdict()))
 
 
 def any_of_build_image(base_dict):
@@ -52,6 +60,10 @@ class Executable(namedtuple('Executable', 'alias command')):
     def from_dict(cls, executable_map):
         print(executable_map)
         return cls(list(executable_map.keys())[0], list(executable_map.values())[0])
+
+    def to_dict(self):
+        dict_temp = dict(self._asdict())
+        return {dict_temp['alias']: dict_temp['command']}
 
 
 class Environment(namedtuple('Environment', 'variable value')):
@@ -98,7 +110,7 @@ class Volume(namedtuple('Volume', 'src_path dest_path mode')):
         if 'src_path' not in volume_dict:
             raise PackageSpecificationSyntax('volume --> src_path')
         src_path = volume_dict['src_path']
-        dest_path = MODULE_PATH + pkg_name + src_path
+        dest_path = MODULE_FOLDER + pkg_name + src_path
         mode = 'rw'
         if 'dest_path' in volume_dict:
             dest_path = volume_dict['dest_path']

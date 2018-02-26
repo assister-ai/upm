@@ -30,10 +30,11 @@ def init():
 @main.command()
 @click.argument('folder', nargs=1, type=click.Path(exists=True), required=False)
 def install(folder):
-    print(folder)
+    if folder:
+        folder = abspath(folder)
     path = getcwd()
-    abs_path = abspath(folder)
-    commands.install_package(path, abs_path)
+    commands.install_package(path, folder)
+
 
 
 @main.command()

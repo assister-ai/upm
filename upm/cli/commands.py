@@ -2,8 +2,13 @@ import logging
 
 import click
 
-from package.errors import PackageSpecificationAlreadyExist, PackageSpecificationNotFound
-from package.specification import package_exists, PackageSpecification, dump_upm, load_yaml
+from package.errors import PackageSpecificationAlreadyExist
+from package.errors import PackageSpecificationNotFound
+from package.specification import PackageSpecification
+from package.specification import dump_upm
+from package.specification import load_yaml
+from package.specification import package_exists
+from package.tree import ModuleTree
 
 log = logging.getLogger(__name__)
 
@@ -63,8 +68,13 @@ def install_package(working_dir, pkg_location=None):
     if pkg_location:
         package_specification.add_dependency_folder(pkg_location)
         dump_upm(package_specification, working_dir)
-    log.debug(package_specification)
-    package_specification.composer(working_dir)
+
+    tree = ModuleTree(working_dir)
+
+    # log.debug(package_specification)
+    # package_specification.composer(working_dir)
+
+
 
 
 

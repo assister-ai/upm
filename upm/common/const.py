@@ -13,4 +13,4 @@ INITIALIZE_PROMPT_MSG = {
 
 WORKING_DIR = '/src'
 USER = 'root'
-MODULE_PATH = './universal_module/'
+MODULE_FOLDER = 'universal_modules'

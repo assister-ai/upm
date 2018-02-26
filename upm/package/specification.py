@@ -5,6 +5,7 @@ from collections import namedtuple
 import yaml
 
 from common.const import SPEC_FILE_NAME
+from common.utils import remove_none_field
 from package.types import Base, Volume
 from package.types import Service
 from package.types import Executable
@@ -12,6 +13,7 @@ from package.types import Environment
 from package.types import Dependency
 from package.errors import PackageSpecificationError
 from package.errors import PackageSpecificationNotFound
+
 
 log = logging.getLogger(__name__)
 
@@ -54,6 +56,13 @@ class PackageSpecification(
 
         return cls(name, author, version, description, service, executables, base, environments, dependencies, volumes)
 
+    @classmethod
+    def from_cli(cls, name, author, version, description, executables_list, base_dict):
+        log.debug(executables_list)
+        if executables_list and len(executables_list) > 0:
+            executables = [Executable.from_dict(executable) for executable in executables_list]
+        return cls(name, author, version, description, None, executables, Base.from_dict(base_dict), None, None, None)
+
     def add_dependency_folder(self, location):
         if package_exists(location):
             name = os.path.basename(os.path.normpath(location))
@@ -64,6 +73,9 @@ class PackageSpecification(
     def _add_dependency(self, name, location):
         if not isinstance(self.dependencies, list):
             self.dependencies = []
+        for item in self.dependencies:
+            if item.name is name:
+                self.dependencies.remove(item)
         self.dependencies.append(Dependency(name, location))
 
     def _compose_repr(self, parent=None):
@@ -101,15 +113,13 @@ class PackageSpecification(
         result = dict(self._asdict())
         log.debug(result)
         if isinstance(result['base'], Base):
-            result['base'] = remove_none_field(dict(result['base']._asdict()))
+            result['base'] = result['base'].to_dict()
 
-        # Todo impilimet to dict for Dependency and Executables
         if isinstance(result['executables'], list):
             temp = []
             for item in result['executables']:
                 if isinstance(item, Executable):
-                    dict_temp = dict(item._asdict())
-                    temp.append({dict_temp['alias']: dict_temp['command']})
+                    temp.append(item.to_dict())
                 else:
                     temp.append(item)
             result['executables'] = temp
@@ -118,17 +128,12 @@ class PackageSpecification(
             temp = []
             for item in result['dependencies']:
                 if isinstance(item, Dependency):
-                    dict_temp = dict(item._asdict())
-                    temp.append({dict_temp['name']: dict_temp['location']})
+                    temp.append(item.to_dict())
                 else:
                     temp.append(item)
             result['dependencies'] = temp
 
         return result
-
-    @classmethod
-    def from_cli(cls, name, author, version, description, executables, base):
-        return cls(name, author, version, description, None, executables, base, None, None, None)
 
 
 def package_exists(working_dir):
@@ -170,11 +175,3 @@ def dump_yaml(specification, package_dir, file_name):
         yaml.dump(specification, file, Dumper=MyDumper,
                   default_flow_style=False, encoding='utf-8', allow_unicode=True)
         file.close()
-
-
-def remove_none_field(specification_dict):
-    spec_dict = {}
-    for key, value in specification_dict.items():
-        if value is not None and len(value) is not 0:
-            spec_dict[key] = value
-    return spec_dict
