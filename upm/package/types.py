@@ -1,4 +1,6 @@
 from collections import namedtuple
+import os
+import shutil
 
 from common.utils import remove_none_field
 from common.const import WORKING_DIR, USER, MODULE_FOLDER
@@ -17,6 +19,11 @@ class Dependency(namedtuple('Dependency', 'name location')):
     def to_dict(self):
         dict_temp = dict(self._asdict())
         return {dict_temp['name']: dict_temp['location']}
+
+    def fetch(self, target):
+        dest = os.path.join(target, self.name)
+        shutil.copytree(self.location, dest)
+        return dest
 
 
 class Base(namedtuple('Base', 'image build work_dir user')):
@@ -104,19 +111,25 @@ class Image(namedtuple('Image', 'user name tag registry')):
 #     return cls(path, executable, args)
 
 
-class Volume(namedtuple('Volume', 'src_path dest_path mode')):
+class Volume(namedtuple('Volume', 'host_path container_path mode')):
     @classmethod
-    def from_dict(cls, volume_dict, pkg_name):
-        if 'src_path' not in volume_dict:
+    def from_dict(cls, volume_dict):
+        if not isinstance(volume_dict, dict):
             raise PackageSpecificationSyntax('volume --> src_path')
-        src_path = volume_dict['src_path']
-        dest_path = MODULE_FOLDER + pkg_name + src_path
+        host_path = list(volume_dict.keys())[0]
+        container_path = list(volume_dict.values())[0]
         mode = 'rw'
-        if 'dest_path' in volume_dict:
-            dest_path = volume_dict['dest_path']
-        if 'mode' in volume_dict:
-            mode = volume_dict['mode']
-        return cls(src_path, dest_path, mode)
+        return cls(host_path, container_path, mode)
+
+    @classmethod
+    def default_volumes(cls, parent_src=None):
+        volumes = [Volume('./src', '/src', 'rw')]
+        if parent_src:
+            volumes.append(Volume(parent_src, '/data', 'rw'))
+        return volumes
+
+    def to_dict(self):
+        return {self.host_path: self.container_path}
 
 
 class Port(namedtuple('Port', 'host_ip host_port container_port protocol')):

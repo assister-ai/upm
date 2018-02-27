@@ -61,7 +61,8 @@ class PackageSpecification(
         log.debug(executables_list)
         if executables_list and len(executables_list) > 0:
             executables = [Executable.from_dict(executable) for executable in executables_list]
-        return cls(name, author, version, description, None, executables, Base.from_dict(base_dict), None, None, None)
+        volumes = Volume.default_volumes()
+        return cls(name, author, version, description, None, executables, Base.from_dict(base_dict), None, None, volumes)
 
     def add_dependency_folder(self, location):
         if package_exists(location):
@@ -95,9 +96,10 @@ class PackageSpecification(
                     service['ports'].update({port.host_port: port.container_port})
 
         if self.volumes:
-            service['volumes'] = {}
+            service['volumes'] = []
             for volume in self.volumes:
-                service['volumes'].update({volume.src_path: volume.dest_path})
+                service['volumes'].append(volume.to_dict())
+
         service_name = get_service_name(self.name, parent)
         service['container_name'] = service_name
         if self.dependencies:
@@ -132,6 +134,15 @@ class PackageSpecification(
                 else:
                     temp.append(item)
             result['dependencies'] = temp
+
+        if isinstance(result['volumes'], list):
+            temp = []
+            for item in result['volumes']:
+                if isinstance(item, Volume):
+                    temp.append(item.to_dict())
+                else:
+                    temp.append(item)
+            result['volumes'] = temp
 
         return result
 

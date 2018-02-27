@@ -6,9 +6,9 @@ from os.path import abspath
 
 from cli import commands
 
-
 log = logging.getLogger(__name__)
 console_handler = logging.StreamHandler(sys.stderr)
+
 
 # logging.basicConfig(level=logging.INFO)
 
@@ -34,7 +34,6 @@ def install(folder):
         folder = abspath(folder)
     path = getcwd()
     commands.install_package(path, folder)
-
 
 
 @main.command()

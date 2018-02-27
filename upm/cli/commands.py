@@ -8,6 +8,7 @@ from package.specification import PackageSpecification
 from package.specification import dump_upm
 from package.specification import load_yaml
 from package.specification import package_exists
+from package.lookup import Lookup
 from package.tree import ModuleTree
 
 log = logging.getLogger(__name__)
@@ -69,10 +70,10 @@ def install_package(working_dir, pkg_location=None):
         package_specification.add_dependency_folder(pkg_location)
         dump_upm(package_specification, working_dir)
 
-    tree = ModuleTree(working_dir)
+    tree = ModuleTree.installer(working_dir)
+    lookup = Lookup(tree.get_module_path())
+    lookup.initialize(tree.get_level_order_iter())
 
-    # log.debug(package_specification)
-    # package_specification.composer(working_dir)
 
 
 

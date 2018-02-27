@@ -1,7 +1,9 @@
 import logging
 import os
+import shutil
 
 log = logging.getLogger(__name__)
+
 
 def remove_none_field(specification_dict):
     spec_dict = {}
@@ -12,8 +14,6 @@ def remove_none_field(specification_dict):
 
 
 def ensure_makedir(file_path):
-    # directory = os.path.dirname(file_path)
-    # log.debug(directory)
-    if not os.path.exists(file_path):
-        log.debug("why?")
-        os.makedirs(file_path)
+    if os.path.exists(file_path):
+        shutil.rmtree(file_path)
+    os.makedirs(file_path)
