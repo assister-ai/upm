@@ -1,15 +1,20 @@
 import logging
+import os
 
 import click
-
+import subprocess
+from common.const import COMPOSE_FILE
+from common.const import SPEC_FILE_NAME
 from package.errors import PackageSpecificationAlreadyExist
 from package.errors import PackageSpecificationNotFound
 from package.specification import PackageSpecification
+from package.specification import dump_yaml
 from package.specification import dump_upm
 from package.specification import load_yaml
 from package.specification import package_exists
 from package.lookup import Lookup
 from package.tree import ModuleTree
+
 
 log = logging.getLogger(__name__)
 
@@ -63,16 +68,21 @@ def initialize_package(working_dir):
 
 def install_package(working_dir, pkg_location=None):
     if not package_exists(working_dir):
-        raise PackageSpecificationNotFound(['upm.yml'])
+        raise PackageSpecificationNotFound([SPEC_FILE_NAME])
 
-    package_specification = load_yaml('upm.yml')
+    package_specification = load_yaml(SPEC_FILE_NAME)
     if pkg_location:
         package_specification.add_dependency_folder(pkg_location)
         dump_upm(package_specification, working_dir)
 
     tree = ModuleTree.installer(working_dir)
+    tree.ascii_art()
+    dump_yaml(tree.compose(), os.path.join(working_dir), COMPOSE_FILE)
     lookup = Lookup(tree.get_module_path())
     lookup.initialize(tree.get_level_order_iter())
+    subprocess.run(["docker-compose", "down", "-v"])
+    subprocess.run(["docker-compose", "up", "-d", "--build", "--remove-orphans"])
+    subprocess.run(["docker-compose", "logs"])
 
 
 

@@ -65,7 +65,6 @@ def any_of_build_image(base_dict):
 class Executable(namedtuple('Executable', 'alias command')):
     @classmethod
     def from_dict(cls, executable_map):
-        print(executable_map)
         return cls(list(executable_map.keys())[0], list(executable_map.values())[0])
 
     def to_dict(self):
@@ -129,7 +128,7 @@ class Volume(namedtuple('Volume', 'host_path container_path mode')):
         return volumes
 
     def to_dict(self):
-        return {self.host_path: self.container_path}
+        return "{}:{}".format(self.host_path, self.container_path)
 
 
 class Port(namedtuple('Port', 'host_ip host_port container_port protocol')):

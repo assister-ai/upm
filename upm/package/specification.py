@@ -58,7 +58,6 @@ class PackageSpecification(
 
     @classmethod
     def from_cli(cls, name, author, version, description, executables_list, base_dict):
-        log.debug(executables_list)
         if executables_list and len(executables_list) > 0:
             executables = [Executable.from_dict(executable) for executable in executables_list]
         volumes = Volume.default_volumes()
@@ -66,7 +65,8 @@ class PackageSpecification(
 
     def add_dependency_folder(self, location):
         if package_exists(location):
-            name = os.path.basename(os.path.normpath(location))
+            pkg_spec = load_yaml(os.path.join(location, SPEC_FILE_NAME))
+            name = pkg_spec.name
             self._add_dependency(name, location)
         else:
             raise PackageSpecificationNotFound
@@ -79,7 +79,7 @@ class PackageSpecification(
                 self.dependencies.remove(item)
         self.dependencies.append(Dependency(name, location))
 
-    def _compose_repr(self, parent=None):
+    def to_compose_service(self, service_name):
         service = {}
         if self.base.build:
             service['build'] = self.base.build
@@ -100,20 +100,17 @@ class PackageSpecification(
             for volume in self.volumes:
                 service['volumes'].append(volume.to_dict())
 
-        service_name = get_service_name(self.name, parent)
         service['container_name'] = service_name
-        if self.dependencies:
-            service['depend_on'] = [get_service_name(dep.name, self.name) for dep in self.dependencies]
-        compose_yml = {'version': '3.3', 'services': {service_name: service}}
-        return compose_yml
+        # if self.dependencies:
+        #     service['depends_on'] = [get_service_name(dep.name, service_name) for dep in self.dependencies]
+        return {service_name: service}
 
-    def composer(self, location, parent=None):
-        compose = self._compose_repr(parent)
-        dump_yaml(compose, location, 'compose.yml')
+    def to_compose(self, service_name):
+        compose_yml = {'version': '3.3', 'services': self.to_compose_service(service_name)}
+        return compose_yml
 
     def to_dict(self):
         result = dict(self._asdict())
-        log.debug(result)
         if isinstance(result['base'], Base):
             result['base'] = result['base'].to_dict()
 
@@ -162,7 +159,6 @@ def load_yaml(filename):
     try:
         with open(filename, 'r') as fh:
             sp_dict = yaml.safe_load(fh)
-
             return PackageSpecification.from_dict(sp_dict)
     except (IOError, yaml.YAMLError) as e:
         error_name = getattr(e, '__module__', '') + '.' + e.__class__.__name__
@@ -181,7 +177,6 @@ def dump_yaml(specification, package_dir, file_name):
             return super(MyDumper, self).increase_indent(flow, False)
 
     file_path = os.path.join(package_dir, file_name)
-    log.debug(specification)
     with open(file_path, 'w') as file:
         yaml.dump(specification, file, Dumper=MyDumper,
                   default_flow_style=False, encoding='utf-8', allow_unicode=True)

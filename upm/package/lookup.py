@@ -1,6 +1,7 @@
 import os
 
 from tinydb import TinyDB
+from tinydb import Query
 
 from common.const import MODULE_FOLDER
 from common.const import DB_NAME
@@ -20,3 +21,7 @@ class Lookup:
             container_name = node.get_name()
             executables = node.get_executables()
             self._add(container_name, executables)
+
+    def get(self, command):
+        LP = Query()
+        return self.db.get(LP.alias == command)

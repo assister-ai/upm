@@ -61,7 +61,7 @@ if __name__ == '__main__':
         entry_points={
             'console_scripts': [
                 'upm = cli.main:main',
-                'upx = upx.cli:main'
+                'upx = upx.main:main'
             ],
         },
         description=find_meta('description'),

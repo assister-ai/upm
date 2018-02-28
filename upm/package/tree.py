@@ -11,7 +11,8 @@ from common.utils import ensure_makedir
 from common.const import MODULE_FOLDER
 from common.const import SPEC_FILE_NAME
 from package.specification import load_yaml
-from package.specification import get_service_name
+from package.specification import dump_yaml
+
 
 log = logging.getLogger(__name__)
 
@@ -34,8 +35,14 @@ class ModuleTree:
     def get_level_order_iter(self):
         return LevelOrderIter(self.root)
 
-    def __repr__(self):
-        log.info(RenderTree(self.root, style=AsciiStyle()))
+    def compose(self):
+        services = {}
+        for node in LevelOrderIter(self.root):
+            services.update(node.get_compose_service())
+        return {'version': '3.3', 'services': services}
+
+    def ascii_art(self):
+        print(RenderTree(self.root, style=AsciiStyle()))
 
 
 def modules_maker(root_path, parent=None):
@@ -53,7 +60,7 @@ def module_loader(root_path, parent=None):
     child_list = root.get_installed_dependencies()
     if len(child_list) > 0:
         for child in child_list:
-            modules_maker(child, root)
+            module_loader(child, root)
     return root
 
 
@@ -63,14 +70,10 @@ class ModuleNode(NodeMixin):
         self.abs_path = os.path.abspath(specification_path)
         self.specification = load_yaml(os.path.join(specification_path, SPEC_FILE_NAME))
         self.abs_module_dir = os.path.join(self.abs_path, MODULE_FOLDER)
+        self.name = self.specification.name
 
     def install(self):
-        log.debug(self.abs_module_dir)
-        parent_name = None
-        if self.parent:
-            parent_name = self.parent.specification.name
         ensure_makedir(self.abs_module_dir)
-        self.specification.composer(self.abs_module_dir, parent_name)
 
     def fetch_dependencies(self):
         dependencies = self.specification.dependencies
@@ -94,13 +97,14 @@ class ModuleNode(NodeMixin):
         return self.specification.executables
 
     def get_name(self):
-        parent_name = None
-        if self.parent:
-            parent_name = self.parent.specification.name
-        name = get_service_name(self.specification.name, parent_name)
-        return name
+        names = [name.name for name in self.path]
+        service_name = '_'.join(names)
+        return service_name
+
+    def get_compose_service(self):
+        return self.specification.to_compose_service(self.get_name())
 
     def __repr__(self):
-        return 'name={}'.format(self.abs_path, self.specification.name)
+        return '{}'.format(self.name)
 
 
