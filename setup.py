@@ -79,4 +79,6 @@ if __name__ == '__main__':
         zip_safe=False,
         classifiers=CLASSIFIERS,
         install_requires=INSTALL_REQUIRES,
+        package_data={'': ['upm/package/validation_schema.yml']},
+        include_package_data=True
     )

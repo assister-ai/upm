@@ -1,0 +1,13 @@
+author: test
+base:
+  image: node
+  user: root
+  work_dir: /src
+dependencies:
+  - test-dep3: ../test-dep3
+executables:
+  - run: npm install
+name: test-dep2
+version: 0.0.1
+volumes:
+  - ./src:/src
