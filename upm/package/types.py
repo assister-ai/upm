@@ -94,6 +94,16 @@ class Image(namedtuple('Image', 'user name tag registry')):
     pass
 
 
+class Commit(namedtuple('Commit', 'order command')):
+    @classmethod
+    def from_dict(cls, commit_map):
+        return cls(list(commit_map.keys())[0], list(commit_map.values())[0])
+
+    def to_dict(self):
+        dict_temp = dict(self._asdict())
+        return {dict_temp['order']: dict_temp['command']}
+
+
 # class Command(namedtuple('Command', 'executable')):
 #    pass
 # @classmethod
@@ -112,11 +122,14 @@ class Image(namedtuple('Image', 'user name tag registry')):
 
 class Volume(namedtuple('Volume', 'host_path container_path mode')):
     @classmethod
-    def from_dict(cls, volume_dict):
-        if not isinstance(volume_dict, dict):
-            raise PackageSpecificationSyntax('volume --> src_path')
-        host_path = list(volume_dict.keys())[0]
-        container_path = list(volume_dict.values())[0]
+    def parse(cls, volume_dict):
+        if not isinstance(volume_dict, str):
+            raise PackageSpecificationSyntax('syntax error on Volume')
+        vol_array = split_on_colon(volume_dict)
+        host_path = vol_array[0]
+        container_path = None
+        if len(vol_array) > 1:
+            container_path = vol_array[1]
         mode = 'rw'
         return cls(host_path, container_path, mode)
 
@@ -147,3 +160,7 @@ class Port(namedtuple('Port', 'host_ip host_port container_port protocol')):
         if 'protocol' in port_dict:
             protocol = port_dict['protocol']
         return cls(host_ip, host_port, container_port, protocol)
+
+
+def split_on_colon(string):
+    return string.split(':')

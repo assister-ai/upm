@@ -1,0 +1,183 @@
+mapping:
+ name:
+  type: str
+ author:
+  type: str
+ description:
+  type: str
+ version:
+  type: str
+ service:
+  type: map
+  map:
+   command:
+    type: map
+    map:
+     path:
+      type: str
+     executable:
+      type: str
+     args:
+      type: seq
+      sequence:
+        - type: str
+   ports:
+    type: seq
+    sequence:
+     - type: map
+       map:
+        host_ip:
+         type: str
+         length:
+          min: 7
+          max: 15
+         pattern: ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$
+        host_port:
+         type: int
+         range:
+          min: 1
+          max: 65535
+        container_port:
+         type: int
+         range:
+          min: 1
+          max: 65535
+        protocol:
+         type: str
+         pattern: ^(udp|tcp)$
+   volumes:
+    type: seq
+    sequence:
+     - type: map
+       map:
+        src_path:
+         type: str
+        dest_path:
+         type: str
+        mode:
+         type: str
+         pattern: ^(r|w|rw)$
+ overrides:
+  type: seq
+  sequence:
+   - type: map
+     map:
+      pkg_name:
+       type: str
+      service:
+       type: map
+       map:
+        command:
+         type: map
+         map:
+          path:
+           type: str
+          executable:
+           type: str
+          args:
+           type: seq
+           sequence:
+            - type: str
+        ##
+        ports:
+         type: seq
+         sequence:
+          - type: map
+            map:
+             host_ip:
+              type: str
+              length:
+               min: 7
+               max: 15
+              pattern: ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$
+             host_port:
+              type: int
+              range:
+               min: 1
+             container_port:
+              type: int
+              range:
+               min: 1
+               max: 65535
+             protocol:
+              type: str
+              pattern: ^(udp|tcp)$
+        volumes:
+         type: seq
+         sequence:
+          - type: map
+            map:
+             src_path:
+              type: str
+             dest_path:
+              type: str
+             mode:
+              type: str
+              pattern: ^(r|w|rw)$
+
+ base:
+  type: map
+  map:
+    image:
+      type: str
+#      type: map
+#      map:
+#       user:
+#        type: str
+#       name:
+#        type: str
+#       tag:
+#        type: str
+#       registry:
+#        type: str
+    build:
+      type: str
+    work_dir:
+      type: str
+    user:
+      type: str
+ executables:
+  type: seq
+  sequence:
+   - type: map
+     allowempty: True
+#  type: seq
+#  sequence:
+#   - type: map
+#     map:
+#      alias:
+#       type: str
+#      command:
+#       type: map
+#       map:
+#        path:
+#         type: str
+#        executable:
+#         type: str
+#        args:
+#         type: seq
+#         sequence:
+#          - type: str
+ environments:
+  type: seq
+  sequence:
+   - type: map
+     map:
+      variable:
+       type: str
+      value:
+       type: str
+ dependencies:
+  type: seq
+  sequence:
+   - type: map
+     allowempty: True
+ volumes:
+  type: seq
+  sequence:
+   - type: str
+ commits:
+  type: seq
+  sequence:
+   - type: map
+     allowempty: True

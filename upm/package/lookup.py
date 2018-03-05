@@ -18,7 +18,7 @@ class Lookup:
 
     def initialize(self, node_iter):
         for node in node_iter:
-            container_name = node.get_name()
+            container_name = node.get_service_name()
             executables = node.get_executables()
             self._add(container_name, executables)
 

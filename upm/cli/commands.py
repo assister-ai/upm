@@ -9,8 +9,6 @@ from package.errors import PackageSpecificationAlreadyExist
 from package.errors import PackageSpecificationNotFound
 from package.specification import PackageSpecification
 from package.specification import dump_yaml
-from package.specification import dump_upm
-from package.specification import load_yaml
 from package.specification import package_exists
 from package.lookup import Lookup
 from package.tree import ModuleTree
@@ -27,17 +25,17 @@ def initialize_package(working_dir):
         author = click.prompt('Please enter project author', type=str)
         description = click.prompt('Please enter project description', type=str)
         version = click.prompt('Please enter project version', default='0.0.1', type=str)
-        base_type = click.prompt('Do you have docker file or image ? or default for thine image',
+        base_type = click.prompt('Select your base image?\nfile: Dockerfile\nimage: Docker Image\ndefault: alpine:3.6',
                                  default='default',
                                  type=click.Choice(base_types))
 
-        if base_type is base_types[1]:
+        if str(base_type) == str(base_types[1]):
             image = click.prompt('Please enter DockerImage', default='alpine:3.6', type=str)
             base = {'image': image}
-        elif base_type is base_types[2]:
+        elif base_type == base_types[2]:
             build = click.prompt('Please enter Dockerfile path', default='./Dockerfile', type=str)
             base = {'build': build}
-        elif base_type is base_types[0]:
+        elif base_type == base_types[0]:
             image = 'alpine:3.6'
             base = {'image': image}
         else:
@@ -59,7 +57,7 @@ def initialize_package(working_dir):
         else:
             name, author, description, version, base, executables = get_user_input()
             package = PackageSpecification.from_cli(name, author, version, description, executables, base)
-            dump_upm(package, package_dir)
+            package.dump(package_dir)
             print("project initialized")
             return package
 
@@ -67,17 +65,25 @@ def initialize_package(working_dir):
 
 
 def install_package(working_dir, pkg_location=None):
+    specification_file = os.path.join(working_dir, SPEC_FILE_NAME)
     if not package_exists(working_dir):
         raise PackageSpecificationNotFound([SPEC_FILE_NAME])
 
-    package_specification = load_yaml(SPEC_FILE_NAME)
+    log.info('loading upm yml')
+
+    package_specification = PackageSpecification.from_yaml(specification_file)
     if pkg_location:
+        log.info('try to add dependency to upm')
         package_specification.add_dependency_folder(pkg_location)
-        dump_upm(package_specification, working_dir)
+        log.info('serializing upm')
+        package_specification.dump(working_dir)
+        log.info('sucussful')
+
+    log.info('add dependency to upm')
 
     tree = ModuleTree.installer(working_dir)
     tree.ascii_art()
-    dump_yaml(tree.compose(), os.path.join(working_dir), COMPOSE_FILE)
+    dump_yaml(tree.get_compose_dict(), os.path.join(working_dir), COMPOSE_FILE)
     lookup = Lookup(tree.get_module_path())
     lookup.initialize(tree.get_level_order_iter())
     subprocess.run(["docker-compose", "down", "-v"])

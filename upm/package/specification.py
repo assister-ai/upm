@@ -1,47 +1,46 @@
 import logging
 import os
 from collections import namedtuple
-
+from pykwalify.core import Core
 import yaml
 
 from common.const import SPEC_FILE_NAME
+from common.const import PKG_SPECIFICATION_SCHEMA_PATH
 from common.utils import remove_none_field
-from package.types import Base, Volume
+from package.types import Base
+from package.types import Volume
 from package.types import Service
 from package.types import Executable
 from package.types import Environment
 from package.types import Dependency
+from package.types import Commit
 from package.errors import PackageSpecificationError
 from package.errors import PackageSpecificationNotFound
-
 
 log = logging.getLogger(__name__)
 
 
-class PackageSpecificationFile(namedtuple('PackageSpecificationFile', 'file_name specification')):
-    @classmethod
-    def from_file(cls, filename):
-        return cls(filename, load_yaml(filename))
-
-
 class PackageSpecification(
     namedtuple('_PackageSpecification',
-               'name author version description service executables base environments dependencies volumes')):
+               'name author version description service executables base environments dependencies volumes commits')):
     @classmethod
     def from_dict(cls, pkg_spec_dict):
+        log.debug(pkg_spec_dict)
         name = pkg_spec_dict['name']
+        log.debug(pkg_spec_dict)
         author = ''
         description = ''
         service = None
         executables = None
         dependencies = []
+        commits = []
         environments = None
         volumes = None
         if 'author' in pkg_spec_dict:
             author = pkg_spec_dict['author']
         version = pkg_spec_dict['version']
         if 'description' in pkg_spec_dict:
-            description = ''
+            description = pkg_spec_dict['description']
         base = Base.from_dict(pkg_spec_dict['base'])
         if 'service' in pkg_spec_dict:
             service = Service.from_dict(pkg_spec_dict['service'])
@@ -52,21 +51,34 @@ class PackageSpecification(
         if 'dependencies' in pkg_spec_dict:
             dependencies = [Dependency.from_dict(dependency) for dependency in pkg_spec_dict['dependencies']]
         if 'volumes' in pkg_spec_dict:
-            volumes = [Volume.from_dict(volume) for volume in pkg_spec_dict['volumes']]
+            volumes = [Volume.parse(volume) for volume in pkg_spec_dict['volumes']]
+        if 'commits' in pkg_spec_dict:
+            commits = [Commit.from_dict(commit) for commit in pkg_spec_dict['commits']]
 
-        return cls(name, author, version, description, service, executables, base, environments, dependencies, volumes)
+        return cls(name, author, version, description, service, executables, base, environments, dependencies, volumes,
+                   commits)
 
     @classmethod
     def from_cli(cls, name, author, version, description, executables_list, base_dict):
         if executables_list and len(executables_list) > 0:
             executables = [Executable.from_dict(executable) for executable in executables_list]
         volumes = Volume.default_volumes()
-        return cls(name, author, version, description, None, executables, Base.from_dict(base_dict), None, None, volumes)
+        return cls(name, author, version, description, None, executables, Base.from_dict(base_dict), None, None,
+                   volumes, None)
+
+    @classmethod
+    def from_yaml(cls, path):
+        import package as module
+        core_validator = Core(source_file=path,
+                              schema_files=[os.path.join(os.path.dirname(module.__file__), PKG_SPECIFICATION_SCHEMA_PATH)])
+        core_validator.validate(raise_exception=True)
+        sp_dict = load_yaml(path)
+        return cls.from_dict(sp_dict)
 
     def add_dependency_folder(self, location):
         if package_exists(location):
             pkg_spec = load_yaml(os.path.join(location, SPEC_FILE_NAME))
-            name = pkg_spec.name
+            name = pkg_spec['name']
             self._add_dependency(name, location)
         else:
             raise PackageSpecificationNotFound
@@ -78,6 +90,18 @@ class PackageSpecification(
             if item.name is name:
                 self.dependencies.remove(item)
         self.dependencies.append(Dependency(name, location))
+
+    def add_commit(self, command):
+        if not isinstance(self.commits, list):
+            self.commits = []
+
+        last_commit_index = -1
+        for item in self.commits:
+            print(item)
+            if int(item.order) > last_commit_index:
+                last_commit_index = int(item.order)
+
+        self.commits.append(Commit(last_commit_index+1, command))
 
     def to_compose_service(self, service_name):
         service = {}
@@ -141,7 +165,21 @@ class PackageSpecification(
                     temp.append(item)
             result['volumes'] = temp
 
+        if isinstance(result['commits'], list):
+            temp = []
+            for item in result['commits']:
+                if isinstance(item, Commit):
+                    temp.append(item.to_dict())
+                else:
+                    temp.append(item)
+            result['commits'] = temp
+
         return result
+
+    def dump(self, path):
+        specification_dict = self.to_dict()
+        specification_dict = remove_none_field(specification_dict)
+        dump_yaml(specification_dict, path, SPEC_FILE_NAME)
 
 
 def package_exists(working_dir):
@@ -159,16 +197,10 @@ def load_yaml(filename):
     try:
         with open(filename, 'r') as fh:
             sp_dict = yaml.safe_load(fh)
-            return PackageSpecification.from_dict(sp_dict)
+            return sp_dict
     except (IOError, yaml.YAMLError) as e:
         error_name = getattr(e, '__module__', '') + '.' + e.__class__.__name__
         raise PackageSpecificationError(u"{}: {}".format(error_name, e))
-
-
-def dump_upm(specification, package_dir):
-    specification_dict = specification.to_dict()
-    specification_dict = remove_none_field(specification_dict)
-    dump_yaml(specification_dict, package_dir, SPEC_FILE_NAME)
 
 
 def dump_yaml(specification, package_dir, file_name):

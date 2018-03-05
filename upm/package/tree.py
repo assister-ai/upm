@@ -6,13 +6,10 @@ from anytree import RenderTree
 from anytree import AsciiStyle
 from anytree import LevelOrderIter
 
-
 from common.utils import ensure_makedir
 from common.const import MODULE_FOLDER
 from common.const import SPEC_FILE_NAME
-from package.specification import load_yaml
-from package.specification import dump_yaml
-
+from package.specification import PackageSpecification
 
 log = logging.getLogger(__name__)
 
@@ -35,7 +32,7 @@ class ModuleTree:
     def get_level_order_iter(self):
         return LevelOrderIter(self.root)
 
-    def compose(self):
+    def get_compose_dict(self):
         services = {}
         for node in LevelOrderIter(self.root):
             services.update(node.get_compose_service())
@@ -68,7 +65,7 @@ class ModuleNode(NodeMixin):
     def __init__(self, specification_path, parent=None):
         self.parent = parent
         self.abs_path = os.path.abspath(specification_path)
-        self.specification = load_yaml(os.path.join(specification_path, SPEC_FILE_NAME))
+        self.specification = PackageSpecification.from_yaml(os.path.join(specification_path, SPEC_FILE_NAME))
         self.abs_module_dir = os.path.join(self.abs_path, MODULE_FOLDER)
         self.name = self.specification.name
 
@@ -96,15 +93,13 @@ class ModuleNode(NodeMixin):
     def get_executables(self):
         return self.specification.executables
 
-    def get_name(self):
+    def get_service_name(self):
         names = [name.name for name in self.path]
         service_name = '_'.join(names)
         return service_name
 
     def get_compose_service(self):
-        return self.specification.to_compose_service(self.get_name())
+        return self.specification.to_compose_service(self.get_service_name())
 
     def __repr__(self):
         return '{}'.format(self.name)
-
-
