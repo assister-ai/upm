@@ -10,3 +10,10 @@ INITIALIZE_PROMPT_MSG = {
     'version': 'Please enter project version',
     'base': 'Please enter Dockerfile path'
 }
+
+WORKING_DIR = '/src'
+USER = 'root'
+MODULE_FOLDER = 'universal_modules'
+DB_NAME = 'db.json'
+COMPOSE_FILE = 'docker-compose.yml'
+PKG_SPECIFICATION_SCHEMA_PATH = 'validation_schema.yml'
