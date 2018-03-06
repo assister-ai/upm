@@ -22,3 +22,11 @@ class PackageSpecificationNotFound(PackageSpecificationError):
 
         Supported filenames: %s
         """ % ", ".join(supported_filenames))
+
+
+class PackageSpecificationSyntax(PackageSpecificationError):
+    def __init__(self, field):
+        self.field = field
+        super(PackageSpecificationError, self).__init__(
+            "Package syntax error %s".format(field)
+        )

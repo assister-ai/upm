@@ -61,7 +61,7 @@ if __name__ == '__main__':
         entry_points={
             'console_scripts': [
                 'upm = cli.main:main',
-                'upx = upx.cli:main'
+                'upx = upx.main:main'
             ],
         },
         description=find_meta('description'),
@@ -79,4 +79,6 @@ if __name__ == '__main__':
         zip_safe=False,
         classifiers=CLASSIFIERS,
         install_requires=INSTALL_REQUIRES,
+        package_data={'': ['upm/package/validation_schema.yml']},
+        include_package_data=True
     )

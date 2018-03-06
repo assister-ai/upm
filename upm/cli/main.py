@@ -2,12 +2,13 @@ import click
 import logging
 import sys
 from os import getcwd
+from os.path import abspath
 
 from cli import commands
 
-
 log = logging.getLogger(__name__)
 console_handler = logging.StreamHandler(sys.stderr)
+
 
 # logging.basicConfig(level=logging.INFO)
 
@@ -27,10 +28,12 @@ def init():
 
 
 @main.command()
-# @click.argument('path')
-def install():
+@click.argument('folder', nargs=1, type=click.Path(exists=True), required=False)
+def install(folder):
+    if folder:
+        folder = abspath(folder)
     path = getcwd()
-    commands.install_package(path)
+    commands.install_package(path, folder)
 
 
 @main.command()

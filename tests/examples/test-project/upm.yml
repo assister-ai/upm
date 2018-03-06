@@ -1,0 +1,12 @@
+author: test
+base:
+  image: node
+  user: root
+  work_dir: /src
+executables:
+  - run: npm install
+  - npm: npm
+name: test
+version: 0.0.1
+volumes:
+  - ./src:/src
