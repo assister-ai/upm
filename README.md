@@ -29,5 +29,5 @@ for docker installation see [docker documents](https://docs.docker.com/install/#
 
 for docker-compose :
 ```
-pip install compose
+pip install docker-compose
 ```
