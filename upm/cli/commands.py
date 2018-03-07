@@ -10,6 +10,7 @@ from package.errors import PackageSpecificationNotFound
 from package.specification import PackageSpecification
 from package.specification import dump_yaml
 from package.specification import package_exists
+from package.types import Port
 from package.lookup import Lookup
 from package.tree import ModuleTree
 
@@ -89,6 +90,33 @@ def install_package(working_dir, pkg_location=None):
     subprocess.run(["docker-compose", "down", "-v"])
     subprocess.run(["docker-compose", "up", "-d", "--build", "--remove-orphans"])
     subprocess.run(["docker-compose", "logs"])
+
+
+def upm_set_daemon(working_dir):
+    specification_file = os.path.join(working_dir, SPEC_FILE_NAME)
+
+    def get_user_input():
+        command = click.prompt('Please enter daemon command', type=str)
+        ports = []
+        ports_flag = click.confirm('Do you have port to expose?', default=True)
+        while ports_flag:
+            container_port = click.prompt('Enter port to expose your service on network', default=80, type=int)
+            host_port = click.prompt(
+                "If you want to expose it on host Enter the port or mask it with an other port.if not Enter 0",
+                default=0, type=int)
+            ports.append(Port.from_ports(container_port, host_port))
+            ports_flag = click.confirm('Do you have more ports?', default=False)
+        return command, ports
+
+    def set_daemon():
+        command, ports = get_user_input()
+        package_specification = PackageSpecification.from_yaml(specification_file)
+        package_specification = package_specification.set_daemon(command, package_specification)
+        package_specification = package_specification.set_ports(ports, package_specification)
+
+        package_specification.dump(working_dir)
+    set_daemon()
+
 
 
 

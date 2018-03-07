@@ -78,16 +78,14 @@ class Environment(namedtuple('Environment', 'variable value')):
         return cls(env_dict['variable'], env_dict['value'])
 
 
-class Service(namedtuple('Service', 'command ports')):
+class Daemon(namedtuple('Service', 'command')):
     @classmethod
     def from_dict(cls, service_dict):
-        if 'command' not in service_dict:
-            raise PackageSpecificationSyntax('command')
-        command = service_dict['command']
-        ports = None
-        if 'ports' in service_dict:
-            ports = [Port.from_dict(port) for port in service_dict['ports']]
-        return cls(command, ports)
+        command = service_dict
+        return cls(command)
+
+    def to_dict(self):
+        return self.command
 
 
 class Image(namedtuple('Image', 'user name tag registry')):
@@ -144,22 +142,36 @@ class Volume(namedtuple('Volume', 'host_path container_path mode')):
         return "{}:{}".format(self.host_path, self.container_path)
 
 
-class Port(namedtuple('Port', 'host_ip host_port container_port protocol')):
+class Port(namedtuple('Port', 'container_port host_port host_ip protocol')):
     @classmethod
     def from_dict(cls, port_dict):
         host_ip = None
         host_port = None
         container_port = None
         protocol = None
-        if 'host_ip' in port_dict:
-            host_ip = port_dict['host_ip']
-        if 'host_port' in port_dict:
-            host_port = port_dict['host_port']
-        if 'container_port' in port_dict:
-            container_port = port_dict['container_port']
-        if 'protocol' in port_dict:
-            protocol = port_dict['protocol']
-        return cls(host_ip, host_port, container_port, protocol)
+        port_as_list = split_on_colon(port_dict)
+        if len(port_as_list) == 2:
+            host_port = port_as_list[0]
+            container_port = port_as_list[1]
+        if len(port_as_list) == 1:
+            container_port = port_dict[0]
+        # if 'container_port' in port_dict:
+        #     container_port = port_dict['container_port']
+        # if 'protocol' in port_dict:
+        #     protocol = port_dict['protocol']
+        return cls(container_port, host_port, host_ip, protocol)
+
+    @classmethod
+    def from_ports(cls, container_port, host_port):
+        if host_port == 0:
+            host_port = None
+        return cls(container_port, host_port, None, None)
+
+    def to_dict(self):
+        if self.host_port:
+            return "{}:{}".format(self.host_port, self.container_port)
+        else:
+            return str(self.container_port)
 
 
 def split_on_colon(string):

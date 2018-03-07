@@ -35,6 +35,10 @@ def install(folder):
     path = getcwd()
     commands.install_package(path, folder)
 
+@main.command()
+def daemon():
+    path = getcwd()
+    commands.upm_set_daemon(path)
 
 @main.command()
 def publish():

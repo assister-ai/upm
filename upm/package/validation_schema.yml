@@ -181,3 +181,9 @@ mapping:
   sequence:
    - type: map
      allowempty: True
+ daemon:
+  type: str
+ ports:
+  type: seq
+  sequence:
+   - type: str

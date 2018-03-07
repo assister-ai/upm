@@ -9,11 +9,12 @@ from common.const import PKG_SPECIFICATION_SCHEMA_PATH
 from common.utils import remove_none_field
 from package.types import Base
 from package.types import Volume
-from package.types import Service
+from package.types import Daemon
 from package.types import Executable
 from package.types import Environment
 from package.types import Dependency
 from package.types import Commit
+from package.types import Port
 from package.errors import PackageSpecificationError
 from package.errors import PackageSpecificationNotFound
 
@@ -22,7 +23,7 @@ log = logging.getLogger(__name__)
 
 class PackageSpecification(
     namedtuple('_PackageSpecification',
-               'name author version description service executables base environments dependencies volumes commits')):
+               'name author version description daemon executables base environments dependencies volumes commits ports')):
     @classmethod
     def from_dict(cls, pkg_spec_dict):
         log.debug(pkg_spec_dict)
@@ -30,20 +31,21 @@ class PackageSpecification(
         log.debug(pkg_spec_dict)
         author = ''
         description = ''
-        service = None
+        daemon = None
         executables = None
         dependencies = []
         commits = []
         environments = None
         volumes = None
+        ports = None
         if 'author' in pkg_spec_dict:
             author = pkg_spec_dict['author']
         version = pkg_spec_dict['version']
         if 'description' in pkg_spec_dict:
             description = pkg_spec_dict['description']
         base = Base.from_dict(pkg_spec_dict['base'])
-        if 'service' in pkg_spec_dict:
-            service = Service.from_dict(pkg_spec_dict['service'])
+        if 'daemon' in pkg_spec_dict:
+            daemon = Daemon.from_dict(pkg_spec_dict['daemon'])
         if 'executables' in pkg_spec_dict:
             executables = [Executable.from_dict(executable) for executable in pkg_spec_dict['executables']]
         if 'environments' in pkg_spec_dict:
@@ -54,17 +56,20 @@ class PackageSpecification(
             volumes = [Volume.parse(volume) for volume in pkg_spec_dict['volumes']]
         if 'commits' in pkg_spec_dict:
             commits = [Commit.from_dict(commit) for commit in pkg_spec_dict['commits']]
+        if 'ports' in pkg_spec_dict:
+            ports = [Port.from_dict(port) for port in pkg_spec_dict['ports']]
 
-        return cls(name, author, version, description, service, executables, base, environments, dependencies, volumes,
-                   commits)
+        return cls(name, author, version, description, daemon, executables, base, environments, dependencies, volumes,
+                   commits, ports)
 
     @classmethod
     def from_cli(cls, name, author, version, description, executables_list, base_dict):
+        executables = []
         if executables_list and len(executables_list) > 0:
             executables = [Executable.from_dict(executable) for executable in executables_list]
         volumes = Volume.default_volumes()
         return cls(name, author, version, description, None, executables, Base.from_dict(base_dict), None, None,
-                   volumes, None)
+                   volumes, None, None)
 
     @classmethod
     def from_yaml(cls, path):
@@ -103,6 +108,21 @@ class PackageSpecification(
 
         self.commits.append(Commit(last_commit_index+1, command))
 
+    @classmethod
+    def set_ports(cls, ports, specification):
+        return cls(specification.name, specification.author, specification.version, specification.description,
+                   specification.daemon, specification.executables, specification.base, specification.environments,
+                   specification.dependencies, specification.volumes,
+                   specification.commits, ports)
+
+    @classmethod
+    def set_daemon(cls, command, specification):
+        daemon = Daemon(command)
+        return cls(specification.name, specification.author, specification.version, specification.description,
+                   daemon, specification.executables, specification.base, specification.environments,
+                   specification.dependencies, specification.volumes,
+                   specification.commits, specification)
+
     def to_compose_service(self, service_name):
         service = {}
         if self.base.build:
@@ -112,12 +132,16 @@ class PackageSpecification(
         service['working_dir'] = self.base.work_dir
         service['user'] = self.base.user
 
-        if self.service:
-            service['command'] = self.service.command
-            if self.service.ports:
-                service['ports'] = {}
-                for port in self.service.ports:
-                    service['ports'].update({port.host_port: port.container_port})
+        if self.daemon:
+            service['command'] = self.daemon.command
+
+        if self.ports:
+            service['ports'] = []
+            for port in self.ports:
+                if port.host_port:
+                    service['ports'].append("{}:{}".format(port.host_port, port.container_port))
+                else:
+                    service['ports'].append("{}".format(port.container_port))
 
         if self.volumes:
             service['volumes'] = []
@@ -137,6 +161,9 @@ class PackageSpecification(
         result = dict(self._asdict())
         if isinstance(result['base'], Base):
             result['base'] = result['base'].to_dict()
+
+        if isinstance(result['daemon'], Daemon):
+            result['daemon'] = result['daemon'].to_dict()
 
         if isinstance(result['executables'], list):
             temp = []
@@ -173,6 +200,15 @@ class PackageSpecification(
                 else:
                     temp.append(item)
             result['commits'] = temp
+
+        if isinstance(result['ports'], list):
+            temp = []
+            for item in result['ports']:
+                if isinstance(item, Port):
+                    temp.append(item.to_dict())
+                else:
+                    temp.append(item)
+            result['ports'] = temp
 
         return result
 
