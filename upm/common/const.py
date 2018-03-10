@@ -12,6 +12,7 @@ INITIALIZE_PROMPT_MSG = {
 }
 
 WORKING_DIR = '/src'
+SOURCE_DIR = 'src'
 USER = 'root'
 MODULE_FOLDER = 'universal_modules'
 DB_NAME = 'db.json'
