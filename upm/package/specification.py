@@ -4,6 +4,7 @@ from collections import namedtuple
 from pykwalify.core import Core
 import yaml
 
+from common.const import DOCKER_FILE
 from common.const import SPEC_FILE_NAME
 from common.const import PKG_SPECIFICATION_SCHEMA_PATH
 from common.utils import remove_none_field
@@ -75,7 +76,8 @@ class PackageSpecification(
     def from_yaml(cls, path):
         import package as module
         core_validator = Core(source_file=path,
-                              schema_files=[os.path.join(os.path.dirname(module.__file__), PKG_SPECIFICATION_SCHEMA_PATH)])
+                              schema_files=[
+                                  os.path.join(os.path.dirname(module.__file__), PKG_SPECIFICATION_SCHEMA_PATH)])
         core_validator.validate(raise_exception=True)
         sp_dict = load_yaml(path)
         return cls.from_dict(sp_dict)
@@ -106,7 +108,7 @@ class PackageSpecification(
             if int(item.order) > last_commit_index:
                 last_commit_index = int(item.order)
 
-        self.commits.append(Commit(last_commit_index+1, command))
+        self.commits.append(Commit(last_commit_index + 1, command))
 
     @classmethod
     def set_ports(cls, ports, specification):
@@ -123,12 +125,17 @@ class PackageSpecification(
                    specification.dependencies, specification.volumes,
                    specification.commits, specification)
 
+    def get_docker_content(self):
+        return "FROM {}".format(self.base.image)
+
     def to_compose_service(self, service_name):
         service = {}
+        service['image'] = "{}:{}".format(service_name, "latest")
         if self.base.build:
             service['build'] = self.base.build
         else:
             service['image'] = self.base.image
+            service_name
         service['working_dir'] = self.base.work_dir
         service['user'] = self.base.user
 
@@ -248,4 +255,14 @@ def dump_yaml(specification, package_dir, file_name):
     with open(file_path, 'w') as file:
         yaml.dump(specification, file, Dumper=MyDumper,
                   default_flow_style=False, encoding='utf-8', allow_unicode=True)
+        file.close()
+
+
+def dump_docker_file(content, package_dir):
+    file_path = os.path.join(package_dir, DOCKER_FILE)
+    with open(file_path, 'w') as file:
+        contents = file.read().split("\n")
+        file.seek(0)  # <- This is the missing piece
+        file.truncate()
+        file.write(content)
         file.close()
