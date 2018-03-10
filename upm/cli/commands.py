@@ -5,6 +5,7 @@ import click
 import subprocess
 from common.const import COMPOSE_FILE
 from common.const import SPEC_FILE_NAME
+from common.const import SOURCE_DIR
 from package.errors import PackageSpecificationAlreadyExist
 from package.errors import PackageSpecificationNotFound
 from package.specification import PackageSpecification
@@ -59,6 +60,9 @@ def initialize_package(working_dir):
             name, author, description, version, base, executables = get_user_input()
             package = PackageSpecification.from_cli(name, author, version, description, executables, base)
             package.dump(package_dir)
+            source_dir = os.path.join(package_dir, SOURCE_DIR)
+            if not os.path.exists(source_dir):
+                os.mkdir(source_dir)
             print("project initialized")
             return package
 
