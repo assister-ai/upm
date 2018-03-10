@@ -119,7 +119,7 @@ class ModuleNode(NodeMixin):
         return self.name
 
     def get_compose_service(self):
-        service = self.specification.to_compose_service(self.get_service_name())
+        service = self.specification.to_compose_service(self.get_service_name(), self.abs_path)
         key = list(service.keys())[0]
         value = list(service.values())[0]
         value["networks"] = self.network_configs.to_compose_service_network()

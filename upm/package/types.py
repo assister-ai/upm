@@ -1,3 +1,4 @@
+import logging
 from collections import namedtuple
 import os
 import shutil
@@ -6,6 +7,7 @@ from common.utils import remove_none_field
 from common.const import WORKING_DIR, USER, MODULE_FOLDER
 from package.errors import PackageSpecificationSyntax
 
+log = logging.getLogger(__name__)
 
 class Override(namedtuple('Override', 'pkg_name, service')):
     pass
@@ -138,6 +140,13 @@ class Volume(namedtuple('Volume', 'host_path container_path mode')):
             volumes.append(Volume(parent_src, '/data', 'rw'))
         return volumes
 
+    @classmethod
+    def abs_host_path(cls, volume, abs_path):
+        def merge(host_path, prefix):
+            return os.path.abspath(os.path.join(prefix, host_path))
+
+        return cls(merge(volume.host_path, abs_path), volume.container_path, volume.mode)
+
     def to_dict(self):
         return "{}:{}".format(self.host_path, self.container_path)
 
@@ -154,7 +163,7 @@ class Port(namedtuple('Port', 'container_port host_port host_ip protocol')):
             host_port = port_as_list[0]
             container_port = port_as_list[1]
         if len(port_as_list) == 1:
-            container_port = port_dict[0]
+            container_port = port_as_list[0]
         # if 'container_port' in port_dict:
         #     container_port = port_dict['container_port']
         # if 'protocol' in port_dict:

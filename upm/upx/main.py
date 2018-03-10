@@ -48,7 +48,7 @@ def main(debug, save, daemon, command, args):
 
 
 def generate_docker_compose_command(container_name, command, args=None):
-    run = ["docker-compose", "run"]
+    run = ["docker-compose", "run", "--service-ports", "--rm"]
     if args:
         return run + [container_name] + command.split() + args.split()
     return run + [container_name] + command.split()

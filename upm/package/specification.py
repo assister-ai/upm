@@ -123,7 +123,7 @@ class PackageSpecification(
                    specification.dependencies, specification.volumes,
                    specification.commits, specification)
 
-    def to_compose_service(self, service_name):
+    def to_compose_service(self, service_name, abs_path=None):
         service = {}
         if self.base.build:
             service['build'] = self.base.build
@@ -139,6 +139,7 @@ class PackageSpecification(
             service['ports'] = []
             for port in self.ports:
                 if port.host_port:
+                    # @TODO move this functionality to port.to_dict()
                     service['ports'].append("{}:{}".format(port.host_port, port.container_port))
                 else:
                     service['ports'].append("{}".format(port.container_port))
@@ -146,6 +147,8 @@ class PackageSpecification(
         if self.volumes:
             service['volumes'] = []
             for volume in self.volumes:
+                if abs_path:
+                    volume = Volume.abs_host_path(volume, abs_path)
                 service['volumes'].append(volume.to_dict())
 
         service['container_name'] = service_name
