@@ -222,6 +222,11 @@ class PackageSpecification(
 
         return result
 
+    def need_generate_dockerfile(self):
+        if self.base.image:
+            return True
+        return False
+
     def dump(self, path):
         specification_dict = self.to_dict()
         specification_dict = remove_none_field(specification_dict)
