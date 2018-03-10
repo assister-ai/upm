@@ -34,7 +34,7 @@ def initialize_package(working_dir):
             image = click.prompt('Please enter DockerImage', default='alpine:3.6', type=str)
             base = {'image': image}
         elif base_type == base_types[2]:
-            build = click.prompt('Please enter Dockerfile path', default='./Dockerfile', type=str)
+            build = click.prompt('Please enter Dockerfile folder path', default='./', type=str)
             base = {'build': build}
         elif base_type == base_types[0]:
             image = 'alpine:3.6'
@@ -78,7 +78,7 @@ def install_package(working_dir, pkg_location=None):
         package_specification.add_dependency_folder(pkg_location)
         log.info('serializing upm')
         package_specification.dump(working_dir)
-        log.info('sucussful')
+        log.info('successful')
 
     log.info('add dependency to upm')
 
