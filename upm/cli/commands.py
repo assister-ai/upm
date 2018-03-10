@@ -78,7 +78,7 @@ def install_package(working_dir, pkg_location=None):
         package_specification.add_dependency_folder(pkg_location)
         log.info('serializing upm')
         package_specification.dump(working_dir)
-        log.info('sucussful')
+        log.info('successful')
 
     log.info('add dependency to upm')
 
