@@ -83,8 +83,9 @@ class ModuleNode(NodeMixin):
 
     def install(self):
         ensure_makedir(self.abs_module_dir)
-        docker_file_content = self.specification.get_docker_content()
-        dump_docker_file(docker_file_content, self.abs_path)
+        if self.specification.need_generate_dockerfile():
+            docker_file_content = self.specification.get_docker_content()
+            dump_docker_file(docker_file_content, self.abs_path)
 
     def add_network_config(self, network_name, name):
         self.network_configs.add_alias(network_name, name)
