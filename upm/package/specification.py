@@ -24,7 +24,7 @@ log = logging.getLogger(__name__)
 
 class PackageSpecification(
     namedtuple('_PackageSpecification',
-               'name author version description daemon executables base environments dependencies volumes commits ports')):
+               'name author version description daemon executables base environments dependencies volumes commits ports devDependencies')):
     @classmethod
     def from_dict(cls, pkg_spec_dict):
         log.debug(pkg_spec_dict)
@@ -35,6 +35,7 @@ class PackageSpecification(
         daemon = None
         executables = None
         dependencies = []
+        devDependencies = []
         commits = []
         environments = None
         volumes = None
@@ -53,6 +54,8 @@ class PackageSpecification(
             environments = [Environment.from_dict(environment) for environment in pkg_spec_dict['environment']]
         if 'dependencies' in pkg_spec_dict:
             dependencies = [Dependency.from_dict(dependency) for dependency in pkg_spec_dict['dependencies']]
+        if 'devDependencies' in pkg_spec_dict:
+            devDependencies = [Dependency.from_dict(dependency) for dependency in pkg_spec_dict['devDependencies']]
         if 'volumes' in pkg_spec_dict:
             volumes = [Volume.parse(volume) for volume in pkg_spec_dict['volumes']]
         if 'commits' in pkg_spec_dict:
@@ -61,7 +64,7 @@ class PackageSpecification(
             ports = [Port.from_dict(port) for port in pkg_spec_dict['ports']]
 
         return cls(name, author, version, description, daemon, executables, base, environments, dependencies, volumes,
-                   commits, ports)
+                   commits, ports, devDependencies)
 
     @classmethod
     def from_cli(cls, name, author, version, description, executables_list, base_dict):
@@ -70,7 +73,7 @@ class PackageSpecification(
             executables = [Executable.from_dict(executable) for executable in executables_list]
         volumes = Volume.default_volumes()
         return cls(name, author, version, description, None, executables, Base.from_dict(base_dict), None, None,
-                   volumes, None, None)
+                   volumes, None, None, None)
 
     @classmethod
     def from_yaml(cls, path):
@@ -98,6 +101,22 @@ class PackageSpecification(
                 self.dependencies.remove(item)
         self.dependencies.append(Dependency(name, location))
 
+    def add_dev_dependency_folder(self, location):
+        if package_exists(location):
+            pkg_spec = load_yaml(os.path.join(location, SPEC_FILE_NAME))
+            name = pkg_spec['name']
+            self._add_dev_dependency(name, location)
+        else:
+            raise PackageSpecificationNotFound
+
+    def _add_dev_dependency(self, name, location):
+        if not isinstance(self.dependencies, list):
+            self.devDependencies = []
+        for item in self.devDependencies:
+            if item.name is name:
+                self.devDependencies.remove(item)
+        self.devDependencies.append(Dependency(name, location))
+
     def add_commit(self, command):
         if not isinstance(self.commits, list):
             self.commits = []
@@ -115,7 +134,7 @@ class PackageSpecification(
         return cls(specification.name, specification.author, specification.version, specification.description,
                    specification.daemon, specification.executables, specification.base, specification.environments,
                    specification.dependencies, specification.volumes,
-                   specification.commits, ports)
+                   specification.commits, ports, specification.devDependencies)
 
     @classmethod
     def set_daemon(cls, command, specification):
@@ -123,7 +142,7 @@ class PackageSpecification(
         return cls(specification.name, specification.author, specification.version, specification.description,
                    daemon, specification.executables, specification.base, specification.environments,
                    specification.dependencies, specification.volumes,
-                   specification.commits, specification)
+                   specification.commits, specification, specification.devDependencies)
 
     def get_docker_content(self):
         return "FROM {}".format(self.base.image)
@@ -169,6 +188,7 @@ class PackageSpecification(
 
     def to_dict(self):
         result = dict(self._asdict())
+        log.debug(result)
         if isinstance(result['base'], Base):
             result['base'] = result['base'].to_dict()
 
@@ -192,6 +212,15 @@ class PackageSpecification(
                 else:
                     temp.append(item)
             result['dependencies'] = temp
+
+        if isinstance(result['devDependencies'], list):
+            temp = []
+            for item in result['devDependencies']:
+                if isinstance(item, Dependency):
+                    temp.append(item.to_dict())
+                else:
+                    temp.append(item)
+            result['devDependencies'] = temp
 
         if isinstance(result['volumes'], list):
             temp = []

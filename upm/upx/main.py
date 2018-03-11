@@ -14,7 +14,7 @@ console_handler = logging.StreamHandler(sys.stderr)
 
 
 @click.command()
-@click.option('--debug', default=False, type=bool)
+@click.option('--debug', is_flag=True)
 @click.option('--save', is_flag=True)
 @click.option('--daemon', is_flag=True)
 @click.argument('command')

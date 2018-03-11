@@ -69,7 +69,9 @@ def initialize_package(working_dir):
     from_prompt(working_dir)
 
 
-def install_package(working_dir, pkg_location=None):
+def install_package(working_dir, pkg_location=None, dev_mode=None):
+    if dev_mode is None:
+        dev_mode = False
     specification_file = os.path.join(working_dir, SPEC_FILE_NAME)
     if not package_exists(working_dir):
         raise PackageSpecificationNotFound([SPEC_FILE_NAME])
@@ -78,11 +80,18 @@ def install_package(working_dir, pkg_location=None):
 
     package_specification = PackageSpecification.from_yaml(specification_file)
     if pkg_location:
-        log.info('try to add dependency to upm')
-        package_specification.add_dependency_folder(pkg_location)
-        log.info('serializing upm')
-        package_specification.dump(working_dir)
-        log.info('successful')
+        if dev_mode:
+            log.info('try to add dependency to upm')
+            package_specification.add_dev_dependency_folder(pkg_location)
+            log.info('serializing upm')
+            package_specification.dump(working_dir)
+            log.info('successful')
+        else:
+            log.info('try to add dependency to upm')
+            package_specification.add_dependency_folder(pkg_location)
+            log.info('serializing upm')
+            package_specification.dump(working_dir)
+            log.info('successful')
 
     log.info('add dependency to upm')
 
