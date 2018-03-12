@@ -172,6 +172,11 @@ mapping:
   sequence:
    - type: map
      allowempty: True
+ devDependencies:
+  type: seq
+  sequence:
+   - type: map
+     allowempty: True
  volumes:
   type: seq
   sequence:

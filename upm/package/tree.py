@@ -92,20 +92,32 @@ class ModuleNode(NodeMixin):
 
     def fetch_dependencies(self):
         dependencies = self.specification.dependencies
+        dev_dependencies = self.specification.devDependencies
         module_list = []
         if dependencies and len(dependencies) > 0:
             for dependency in dependencies:
                 new_path = dependency.fetch(self.abs_module_dir)
                 module_list.append(new_path)
+        if self.is_root:
+            if dev_dependencies and len(dev_dependencies) > 0:
+                for dependency in dev_dependencies:
+                    new_path = dependency.fetch(self.abs_module_dir)
+                    module_list.append(new_path)
         return module_list
 
     def get_installed_dependencies(self):
         dependencies = self.specification.dependencies
+        dev_dependencies = self.specification.devDependencies
         module_list = []
         if dependencies and len(dependencies) > 0:
             for dependency in dependencies:
                 installed_path = os.path.join(self.abs_module_dir, dependency.name)
                 module_list.append(installed_path)
+        if self.is_root:
+            if dev_dependencies and len(dev_dependencies) > 0:
+                for dependency in dev_dependencies:
+                    installed_path = os.path.join(self.abs_module_dir, dependency.name)
+                    module_list.append(installed_path)
         return module_list
 
     def get_executables(self):

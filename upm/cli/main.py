@@ -14,7 +14,7 @@ console_handler = logging.StreamHandler(sys.stderr)
 
 
 @click.group()
-@click.option('--debug', default=False, type=bool)
+@click.option('--debug', is_flag=True)
 def main(debug):
     logging.basicConfig(level=logging.DEBUG)
     # if debug:
@@ -28,12 +28,13 @@ def init():
 
 
 @main.command()
+@click.option('--dev', is_flag=True)
 @click.argument('folder', nargs=1, type=click.Path(exists=True), required=False)
-def install(folder):
+def install(folder, dev):
     if folder:
         folder = abspath(folder)
     path = getcwd()
-    commands.install_package(path, folder)
+    commands.install_package(path, folder, dev)
 
 @main.command()
 def daemon():
