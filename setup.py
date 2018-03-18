@@ -22,7 +22,7 @@ CLASSIFIERS = [
     'Topic :: System :: Archiving :: Packaging',
 ]
 INSTALL_REQUIRES = [
-    'click', 'PyYAML'
+    'click', 'PyYAML', 'pykwalify', 'anytree', 'tinydb'
 ]
 
 ###################################################################
