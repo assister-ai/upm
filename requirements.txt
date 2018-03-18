@@ -1,0 +1,6 @@
+anytree==2.4.3
+click==6.7
+pykwalify==1.6.0
+PyYAML==3.12
+tinydb==3.7.0
+
