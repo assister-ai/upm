@@ -20,33 +20,18 @@ console_handler = logging.StreamHandler(sys.stderr)
 @click.command()
 @click.option('--debug', is_flag=True)
 @click.option('--save', is_flag=True)
-@click.option('--daemon', is_flag=True)
 @click.argument('command')
 @click.argument('args', default=False)
-def main(debug, save, daemon, command, args):
-    logging.basicConfig(level=logging.INFO)
+def main(debug, save, command, args):
+    logging.basicConfig(level=logging.DEBUG)
+    working_dir = os.getcwd()
+
     if debug:
         logging.basicConfig(level=logging.DEBUG)
 
-    # @TODO find root directory of project instead of working with current dir
-    working_dir = os.getcwd()
-    lookup = Lookup(working_dir)
-    executable = lookup.get(command)
-    specification = PackageSpecification.from_yaml(os.path.join(working_dir, SPEC_FILE_NAME))
-
-    # @TODO do appropriate action when executable is None
-    if not executable:
-        executable = {'name': specification.name, 'command': command, 'alias': None}
-
-    command_array = generate_docker_compose_command(executable['name'], executable['command'], args)
-    completed = subprocess.run(command_array)
-    # @TODO commit command to image
-    # subprocess.run("sudo chown -hR {}:{} ./src".format(os.getuid(), os.getgid()), )
-    if completed.returncode == 0:
-        fix_owner_ship(os.path.join(working_dir, 'src'))
     # @TODO upx --rollback (remove last commit)
     if save:
-        specification = add_commit(executable, args, working_dir)
+        specification = add_commit(command, args, working_dir)
         dockerfile_content = specification.get_docker_content()
         dump_docker_file(dockerfile_content, working_dir)
         tree = ModuleTree.loader(working_dir)
@@ -59,6 +44,45 @@ def main(debug, save, daemon, command, args):
             specification = PackageSpecification.from_yaml(os.path.join(working_dir, SPEC_FILE_NAME))
             dockerfile_content = specification.get_docker_content()
             dump_docker_file(dockerfile_content, working_dir)
+    else:
+        # @TODO find root directory of project instead of working with current dir
+
+        lookup = Lookup(working_dir)
+        executables = lookup.search(command)
+
+        log.debug(executables)
+        log.debug(list(map(lambda x: x['name'], executables)))
+        executables_len = len(executables)
+        executable = executables[0] if executables_len == 1 else None
+
+        if executables_len > 1:
+            executables_names = list(map(lambda x: x['name'], executables))
+            select_string = ""
+            index = 1
+            for name in executables_names[:-1]:
+                select_string = select_string + str(index) + " )" + name + " " + "\n" + " "
+                index += 1
+            select_string = select_string + str(index) + " )" + executables_names[-1]
+            msg = "Conflict: packages with this alias :\n {}\n select module to run".format(select_string)
+            selected_index = click.prompt(msg, type=click.IntRange(1, len(executables)))
+            executable = executables[selected_index - 1]
+
+        if executable is None:
+            specification = PackageSpecification.from_yaml(os.path.join(working_dir, SPEC_FILE_NAME))
+            log.warning("cant find index it will be run on {}".format(specification.name))
+            executable = {'container': specification.name, 'name': specification.name, 'command': command,
+                          'alias': None}
+
+        # @TODO do appropriate action when executable is None
+        # for executable in executables:
+
+        command_array = generate_docker_compose_command(executable['container'], executable['command'], args)
+        completed = subprocess.run(command_array)
+
+        # subprocess.run("sudo chown -hR {}:{} ./src".format(os.getuid(), os.getgid()), )
+
+        if completed.returncode == 0:
+            fix_owner_ship(os.path.join(working_dir, 'src'))
 
 
 def generate_docker_compose_command(container_name, command, args=None):
@@ -82,9 +106,9 @@ def fix_owner_ship(path):
         return retcode == 0
 
 
-def add_commit(executable, args, root_path):
+def add_commit(command, args, root_path):
     specification = PackageSpecification.from_yaml(os.path.join(root_path, SPEC_FILE_NAME))
-    specification.add_commit(add_args(executable['command'], args))
+    specification.add_commit(add_args(command, args))
     return specification
 
 
