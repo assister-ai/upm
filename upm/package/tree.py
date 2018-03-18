@@ -52,6 +52,9 @@ class ModuleTree:
     def set_network_operator(self, network_operator):
         self.network_operator = network_operator
 
+    def get_root(self):
+        return self.root
+
 
 def modules_maker(root_path, parent=None):
     root = ModuleNode(root_path, parent=parent)

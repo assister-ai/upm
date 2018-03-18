@@ -7,6 +7,7 @@ import yaml
 from common.const import DOCKER_FILE
 from common.const import SPEC_FILE_NAME
 from common.const import PKG_SPECIFICATION_SCHEMA_PATH
+from common.const import SOURCE_DIR
 from common.utils import remove_none_field
 from package.types import Base
 from package.types import Volume
@@ -145,7 +146,20 @@ class PackageSpecification(
                    specification.commits, specification, specification.devDependencies)
 
     def get_docker_content(self):
-        return "FROM {}".format(self.base.image)
+        docker_content = "FROM {} \n".format(self.base.image)
+        docker_content += "COPY {} {}\n".format(os.path.join("./", SOURCE_DIR), os.path.join("/", SOURCE_DIR))
+        docker_content += "RUN C_USER=$USER \n"
+        docker_content += "USER root \n"
+        if len(self.commits):
+            run_string = ''
+            for commit in self.commits[:-1]:
+                run_string += "{} &&".format(commit.command)
+            run_string += "{} \n".format(self.commits[-1].command)
+            docker_content += 'RUN ' + run_string
+        docker_content += "USER $C_USER"
+        log.debug("dockerfile")
+        log.debug(docker_content)
+        return docker_content
 
     def to_compose_service(self, service_name, abs_path=None):
         service = {}
@@ -302,3 +316,9 @@ def dump_docker_file(content, package_dir):
     with open(file_path, 'w') as file:
         file.write(content)
         file.close()
+
+
+def remove_docker_file(package_dir):
+    file_path = os.path.join(package_dir, DOCKER_FILE)
+    if os.path.exists(file_path):
+        os.remove(file_path)
