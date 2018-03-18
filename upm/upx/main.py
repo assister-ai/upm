@@ -8,6 +8,10 @@ from package.lookup import Lookup
 from common.const import IS_WINDOWS_PLATFORM
 from common.const import SPEC_FILE_NAME
 from package.specification import PackageSpecification
+from package.specification import dump_docker_file
+from package.tree import ModuleTree
+
+from package.specification import remove_docker_file
 
 log = logging.getLogger(__name__)
 console_handler = logging.StreamHandler(sys.stderr)
@@ -42,9 +46,19 @@ def main(debug, save, daemon, command, args):
         fix_owner_ship(os.path.join(working_dir, 'src'))
     # @TODO upx --rollback (remove last commit)
     if save:
-        add_commit(executable, args, working_dir)
-    if daemon:
-        pass
+        specification = add_commit(executable, args, working_dir)
+        dockerfile_content = specification.get_docker_content()
+        dump_docker_file(dockerfile_content, working_dir)
+        tree = ModuleTree.loader(working_dir)
+        root = tree.get_root()
+        build = subprocess.run(["docker-compose", "build", root.get_service_name()])
+        if build.returncode == 0:
+            specification.dump(working_dir)
+        else:
+            remove_docker_file(working_dir)
+            specification = PackageSpecification.from_yaml(os.path.join(working_dir, SPEC_FILE_NAME))
+            dockerfile_content = specification.get_docker_content()
+            dump_docker_file(dockerfile_content, working_dir)
 
 
 def generate_docker_compose_command(container_name, command, args=None):
@@ -62,7 +76,8 @@ def add_args(command, args):
 
 def fix_owner_ship(path):
     if not IS_WINDOWS_PLATFORM:
-        fixuid_command =["sudo", "chown", "-hR", "%s:%s" % (os.geteuid(), os.getegid()), path]
+        new_path = path.join(path, '*')
+        fixuid_command = ["sudo", "chown", "-hR", "%s:%s" % (os.geteuid(), os.getegid()), new_path]
         retcode = subprocess.call(fixuid_command)
         return retcode == 0
 
@@ -70,7 +85,6 @@ def fix_owner_ship(path):
 def add_commit(executable, args, root_path):
     specification = PackageSpecification.from_yaml(os.path.join(root_path, SPEC_FILE_NAME))
     specification.add_commit(add_args(executable['command'], args))
-    specification.dump(root_path)
     return specification
 
 

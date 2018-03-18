@@ -11,7 +11,7 @@ INITIALIZE_PROMPT_MSG = {
     'base': 'Please enter Dockerfile path'
 }
 
-WORKING_DIR = '/src'
+WORKING_DIR = '/'
 SOURCE_DIR = 'src'
 USER = 'root'
 MODULE_FOLDER = 'universal_modules'
