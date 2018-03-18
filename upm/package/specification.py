@@ -98,7 +98,7 @@ class PackageSpecification(
         if not isinstance(self.dependencies, list):
             self.dependencies = []
         for item in self.dependencies:
-            if item.name is name:
+            if item.name == name:
                 self.dependencies.remove(item)
         self.dependencies.append(Dependency(name, location))
 
@@ -114,7 +114,7 @@ class PackageSpecification(
         if not isinstance(self.dependencies, list):
             self.devDependencies = []
         for item in self.devDependencies:
-            if item.name is name:
+            if item.name == name:
                 self.devDependencies.remove(item)
         self.devDependencies.append(Dependency(name, location))
 
