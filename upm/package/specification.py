@@ -156,7 +156,9 @@ class PackageSpecification(
                 run_string += "{} &&".format(commit.command)
             run_string += "{} \n".format(self.commits[-1].command)
             docker_content += 'RUN ' + run_string
-        docker_content += "USER $C_USER"
+        docker_content += "USER $C_USER \n"
+        if self.daemon:
+            docker_content += "CMD {}".format(self.daemon.command)
         log.debug("dockerfile")
         log.debug(docker_content)
         return docker_content
