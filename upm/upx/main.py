@@ -100,9 +100,10 @@ def add_args(command, args):
 
 def fix_owner_ship(path):
     if not IS_WINDOWS_PLATFORM:
-        new_path = path.join(path, '*')
-        fixuid_command = ["sudo", "chown", "-hR", "%s:%s" % (os.geteuid(), os.getegid()), new_path]
-        retcode = subprocess.call(fixuid_command)
+        fixuid_command = ["sudo", "chown", "-hR", "%s:%s" % (os.geteuid(), os.getegid()), path]
+        string_command = " ".join(str(x) for x in fixuid_command)
+        log.debug(string_command)
+        retcode = subprocess.run(fixuid_command)
         return retcode == 0
 
 
